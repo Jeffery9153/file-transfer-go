@@ -1,0 +1,40 @@
+# ==============================================
+# 运行时镜像（本地底座版）
+#
+# 用途：当 NAS 无法访问 Docker Hub（拉不到 alpine:3.18 metadata）时使用。
+#       直接复用 NAS 上已有的 matrixseven/file-transfer-go:latest 作为底座，
+#       只替换其中的 server 二进制，构建过程零联网。
+#
+# 构建：
+#   docker build -f Dockerfile.runtime.local -t file-transfer-go:auth .
+#
+# 注意：matrixseven/file-transfer-go:latest 必须是本地已有镜像
+#       （原部署在用它，所以一定在）。
+# ==============================================
+
+FROM matrixseven/file-transfer-go:latest
+
+USER root
+WORKDIR /app
+
+COPY file-transfer-server-linux-amd64 file-transfer-server-linux-arm64 ./
+
+RUN set -eux; \
+    case "$(uname -m)" in \
+      x86_64|amd64)  BIN=file-transfer-server-linux-amd64 ;; \
+      aarch64|arm64) BIN=file-transfer-server-linux-arm64 ;; \
+      *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;; \
+    esac; \
+    mv "$BIN" server; \
+    rm -f file-transfer-server-linux-*; \
+    chmod +x server; \
+    mkdir -p /app/data; \
+    chown -R appuser:appuser /app/data
+
+ENV DATA_DIR=/app/data
+
+USER appuser
+
+EXPOSE 8080
+
+CMD ["./server"]
