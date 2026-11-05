@@ -1,28 +1,23 @@
 version: '3.8'
 
 services:
-  # ────────────────────────────────────────────────────────────────
-  # 启用登录功能后必须挂载 DATA_DIR，否则容器重建会丢失账号
-  # 与找回码，导致只能删掉 data/auth.json 重新初始化。
-  #
-  # 用官方镜像（下面的 image 段）不含本仓库的登录改动，
-  # 要使用登录功能请改为本地构建：
-  #   services:
-  #     file-transfer-go:
-  #       build: .
-  # ────────────────────────────────────────────────────────────────
   file-transfer-go:
-    image: matrixseven/file-transfer-go:latest
-    # 使用本仓库代码构建时取消下面一行注释并删掉 image 段
-    # build: .
+    # 用本仓库代码构建（含登录功能）。
+    # 若只想跑上游官方版本，改成 image: matrixseven/file-transfer-go:latest 并删掉 build 段。
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: file-transfer-go:auth
+    container_name: file-transfer-go
     ports:
-      - "8080:8080"
+      - "7880:8080"
     environment:
-      - NODE_ENV=production
+      - TZ=Asia/Shanghai
       - DATA_DIR=/app/data
     volumes:
       # 账号数据：auth.json（密码/找回码哈希）与 secret.key（会话签名密钥）
-      - ./data:/app/data
+      # 用 named volume 而非 ./data，避免宿主机 uid 与容器内 appuser 不一致导致无写权限
+      - ftg-data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/auth/status"]
@@ -30,3 +25,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  ftg-data:

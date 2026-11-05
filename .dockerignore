@@ -72,6 +72,8 @@ Thumbs.db
 
 # Docker 相关
 Dockerfile*
+# 运行时 Dockerfile 需要参与构建（-f 指定）
+!Dockerfile.runtime
 docker-compose*
 .dockerignore
 
