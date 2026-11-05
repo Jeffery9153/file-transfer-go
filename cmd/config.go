@@ -14,6 +14,7 @@ import (
 type Config struct {
 	Port        int
 	FrontendDir string
+	DataDir     string
 }
 
 // loadEnvFile 加载环境变量文件
@@ -27,31 +28,31 @@ func loadEnvFile(filename string) error {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		
+
 		// 跳过空行和注释行
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		
+
 		// 解析 KEY=VALUE 格式
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) == 2 {
 			key := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
-			
+
 			// 移除值两端的引号
 			if (strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"")) ||
-			   (strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+				(strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
 				value = value[1 : len(value)-1]
 			}
-			
+
 			// 只有当环境变量不存在时才设置
 			if os.Getenv(key) == "" {
 				os.Setenv(key, value)
 			}
 		}
 	}
-	
+
 	return scanner.Err()
 }
 
@@ -64,6 +65,7 @@ func showHelp() {
 	fmt.Println("  环境变量:")
 	fmt.Println("    PORT=8080              - 服务器监听端口")
 	fmt.Println("    FRONTEND_DIR=/path     - 外部前端文件目录 (可选)")
+	fmt.Println("    DATA_DIR=./data        - 账号数据与会话密钥存放目录 (默认 ./data)")
 	fmt.Println("  命令行参数:")
 	flag.PrintDefaults()
 	fmt.Println("")
@@ -101,9 +103,15 @@ func loadConfig() *Config {
 		os.Exit(0)
 	}
 
+	dataDir := strings.TrimSpace(os.Getenv("DATA_DIR"))
+	if dataDir == "" {
+		dataDir = "data"
+	}
+
 	config := &Config{
 		Port:        *port,
 		FrontendDir: os.Getenv("FRONTEND_DIR"),
+		DataDir:     dataDir,
 	}
 
 	return config
@@ -121,4 +129,7 @@ func logConfig(config *Config) {
 	} else {
 		log.Printf("📦 使用内嵌前端文件")
 	}
+
+	// 记录账号数据目录
+	log.Printf("🔐 账号数据目录: %s", config.DataDir)
 }

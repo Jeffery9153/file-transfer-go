@@ -103,10 +103,16 @@ backup/
 
 *.log
 /bin/*
+# 账号数据目录：包含密码哈希、找回码哈希与会话密钥，绝不能提交
+data/
+./data/
 ./chuan-next/node_modules/
 # Next.js相关
 .next/
 ./chuan/.next
-./internal/web/frontend/*
+# 前端构建产物（由 build-fullstack.sh / Dockerfile 拷入）
+internal/web/frontend/*
+# 本项目使用 yarn，npm 生成的锁文件不纳入版本管理
+chuan-next/package-lock.json
 ./file-transfer-server
 file-transfer-server

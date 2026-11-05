@@ -5,19 +5,22 @@ import (
 	"log"
 	"net/http"
 
+	"chuan/internal/auth"
 	"chuan/internal/services"
 )
 
 type Handler struct {
 	webrtcService *services.WebRTCService
 	relayService  *services.RelayService
+	authService   *auth.Service
 }
 
-func NewHandler() *Handler {
+func NewHandler(authService *auth.Service) *Handler {
 	webrtcService := services.NewWebRTCService()
 	return &Handler{
 		webrtcService: webrtcService,
 		relayService:  services.NewRelayService(webrtcService),
+		authService:   authService,
 	}
 }
 

@@ -4,6 +4,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, MessageSquare, Monitor, Users, Settings } from 'lucide-react';
 import Hero from '@/components/Hero';
+import AuthMenu from '@/components/AuthMenu';
 import Footer from '@/components/Footer';
 import { WebRTCFileTransfer } from '@/components/WebRTCFileTransfer';
 import { WebRTCTextImageTransfer } from '@/components/WebRTCTextImageTransfer';
@@ -49,6 +50,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
       <div className="flex-1">
         <div className="container mx-auto px-4 py-2 sm:py-4 md:py-6">
+          {/* 登录态入口 */}
+          <AuthMenu />
+
           {/* Hero Section */}
           <div className="text-center mb-4 sm:mb-6">
             <Hero />

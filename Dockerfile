@@ -66,6 +66,11 @@ RUN apk add --no-cache ca-certificates tzdata && \
 
 WORKDIR /app
 COPY --from=go-builder --chown=appuser:appuser /app/server ./
+
+# 账号数据目录（密码哈希 / 找回码哈希 / 会话密钥），部署时挂载持久化卷
+RUN mkdir -p /app/data && chown -R appuser:appuser /app/data
+ENV DATA_DIR=/app/data
+
 USER appuser
 
 EXPOSE 8080

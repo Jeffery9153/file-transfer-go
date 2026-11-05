@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
+	"chuan/internal/auth"
 	"chuan/internal/handlers"
 	"chuan/internal/web"
 
@@ -12,14 +14,24 @@ import (
 )
 
 // setupRouter 设置路由和中间件
-func setupRouter() http.Handler {
+func setupRouter(config *Config) (http.Handler, error) {
+	// 初始化账号服务（读取 data 目录下的账号数据与会话密钥）
+	authService, err := auth.NewService(config.DataDir)
+	if err != nil {
+		return nil, fmt.Errorf("初始化账号服务失败: %w", err)
+	}
+
 	// 初始化处理器
-	h := handlers.NewHandler()
+	h := handlers.NewHandler(authService)
 
 	router := chi.NewRouter()
 
 	// 设置中间件
 	setupMiddleware(router)
+
+	// 全站鉴权：未登录访问页面会跳转 /login，访问接口返回 401
+	// 必须在注册路由前 Use，chi 要求中间件先于路由定义
+	router.Use(h.RequireAuth)
 
 	// 设置API路由
 	setupAPIRoutes(router, h)
@@ -27,7 +39,7 @@ func setupRouter() http.Handler {
 	// 设置前端路由
 	router.Handle("/*", web.CreateFrontendHandler())
 
-	return router
+	return router, nil
 }
 
 // setupMiddleware 设置中间件
@@ -49,6 +61,15 @@ func setupMiddleware(r *chi.Mux) {
 
 // setupAPIRoutes 设置API路由
 func setupAPIRoutes(r *chi.Mux, h *handlers.Handler) {
+	// 账号相关接口（在鉴权白名单内）
+	r.Route("/api/auth", func(r chi.Router) {
+		r.Get("/status", h.AuthStatusHandler)
+		r.Post("/setup", h.AuthSetupHandler)
+		r.Post("/login", h.AuthLoginHandler)
+		r.Post("/logout", h.AuthLogoutHandler)
+		r.Post("/reset", h.AuthResetHandler)
+	})
+
 	// WebRTC信令WebSocket路由
 	r.Get("/api/ws/webrtc", h.HandleWebRTCWebSocket)
 	r.Get("/ws/webrtc", h.HandleWebRTCWebSocket)
